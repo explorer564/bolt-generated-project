@@ -3,7 +3,7 @@ import './App.css';
 
 const tileColors = ['red', 'blue', 'green', 'yellow'];
 const gridSize = 8;
-const levelTime = 120; // seconds
+const levelTime = 20; // seconds
 
 function App() {
   const [grid, setGrid] = useState(createGrid());
