@@ -11,6 +11,7 @@ function App() {
   const [score, setScore] = useState(0);
   const [timeRemaining, setTimeRemaining] = useState(levelTime);
   const [gameOver, setGameOver] = useState(false);
+  const [gameStarted, setGameStarted] = useState(false); // New state for game start
 
   function createGrid() {
     const newGrid = [];
@@ -24,7 +25,7 @@ function App() {
   }
 
   function handleTileClick(row, col) {
-    if (gameOver) return; // Prevent clicks after game over
+    if (gameOver || !gameStarted) return; // Prevent clicks before game starts or after game over
 
     if (selectedTile) {
       const [selRow, selCol] = selectedTile;
@@ -46,7 +47,7 @@ function App() {
   }
 
   function handleMatches(currentGrid) {
-    if (gameOver) return; // Prevent matches after game over
+    if (gameOver || !gameStarted) return; // Prevent matches before game starts or after game over
 
     let newGrid = currentGrid.map(rowArr => [...rowArr]);
     const matches = [];
@@ -143,7 +144,7 @@ function App() {
   useEffect(() => {
     let timerInterval;
 
-    if (!gameOver) {
+    if (gameStarted && !gameOver) {
       timerInterval = setInterval(() => {
         setTimeRemaining(prevTime => {
           if (prevTime <= 0) {
@@ -155,54 +156,68 @@ function App() {
           }
         });
       }, 1000);
+    } else {
+      clearInterval(timerInterval); // Clear interval if game is not started or is over
     }
 
     return () => clearInterval(timerInterval); // Cleanup on unmount or gameOver
-  }, [gameOver]);
+  }, [gameStarted, gameOver]);
 
   const minutes = Math.floor(timeRemaining / 60);
   const seconds = timeRemaining % 60;
 
+  const startGame = () => {
+    setGrid(createGrid());
+    setScore(0);
+    setTimeRemaining(levelTime);
+    setGameOver(false);
+    setGameStarted(true);
+  };
+
   return (
     <div className="App">
       <h1>Match 3 Game</h1>
-      <div className="score">Score: {score}</div>
-      <div className="timer">Time: {minutes}:{seconds < 10 ? '0' : ''}{seconds}</div>
-      {!gameOver ? (
-        <div className="grid">
-          {grid.map((row, rowIndex) => (
-            <div key={rowIndex} className="row">
-              {row.map((tile, colIndex) => (
-                <div
-                  key={colIndex}
-                  className={`tile ${tile ? tile.color : ''} ${selectedTile && selectedTile[0] === rowIndex && selectedTile[1] === colIndex ? 'selected' : ''} ${tile && tile.matched ? 'matched' : ''}`}
-                  style={{ backgroundColor: tile ? tile.color : '' }}
-                  onClick={() => handleTileClick(rowIndex, colIndex)}
-                >
-                  {tile && tile.matched && (
-                    <div className="particles">
-                      <div className="particle"></div>
-                      <div className="particle"></div>
-                      <div className="particle"></div>
-                      <div className="particle"></div>
-                    </div>
-                  )}
-                </div>
-              ))}
-            </div>
-          ))}
+      {!gameStarted ? (
+        <div className="startScreen">
+          <h2>Welcome to Match 3!</h2>
+          <button onClick={startGame}>Start Game</button>
         </div>
-      ) : (
+      ) : gameOver ? (
         <div className="gameOverScreen">
           <h2>Game Over!</h2>
           <p>Your final score: {score}</p>
           <button onClick={() => {
-            setGrid(createGrid());
-            setScore(0);
-            setTimeRemaining(levelTime);
-            setGameOver(false);
+            startGame();
           }}>Play Again</button>
         </div>
+      ) : (
+        <>
+          <div className="score">Score: {score}</div>
+          <div className="timer">Time: {minutes}:{seconds < 10 ? '0' : ''}{seconds}</div>
+          <div className="grid">
+            {grid.map((row, rowIndex) => (
+              <div key={rowIndex} className="row">
+                {row.map((tile, colIndex) => (
+                  <div
+                    key={colIndex}
+                    className={`tile ${tile ? tile.color : ''} ${selectedTile && selectedTile[0] === rowIndex && selectedTile[1] === colIndex ? 'selected' : ''} ${tile && tile.matched ? 'matched' : ''}`}
+                    style={{ backgroundColor: tile ? tile.color : '' }}
+                    onClick={() => handleTileClick(rowIndex, colIndex)}
+                  >
+                    {tile && tile.matched && (
+                      <div className="particles">
+                        <div className="particle"></div>
+                        <div className="particle"></div>
+                        <div className="particle"></div>
+                        <div className="particle"></div>
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            ))}
+          </div>
+        </>
       )}
     </div>
   );
